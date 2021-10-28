@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script src="js/pixi.min.js"></script>
+    <script>
+		var app = new PIXI.Application(800,600);
+        document.body.appendChild(app.view);
+
+        // 初始化地图
+        var treeList = []; var width = 40, height = 40;
+        var woodBoxList = [];
+        function InitMap() {
+            // 背景
+            var bg = new PIXI.Sprite.fromImage("res/Background.png");
+            app.stage.addChild(bg);
+            // 树
+            for (var i = 0; i < 15; i++) {
+                if (i==0||i==14) {
+                    for (var j = 0; j < 20; j++) {
+                        var tree = new PIXI.Sprite.fromImage("res/boxImg/tree.png");
+                        tree.anchor.set(0.5,0.5);
+                        tree.position.set(width/2+j*width, height/2+i*height);
+                        treeList.push(tree);
+                        app.stage.addChild(tree);
+                    }
+                }
+                else {
+                    for (var j = 0; j < 2; j++) {
+                        var tree = new PIXI.Sprite.fromImage("res/boxImg/tree.png");
+                        tree.anchor.set(0.5,0.5);
+                        tree.position.set(width/2+j*760, height/2+i*height);
+                        treeList.push(tree);
+                        app.stage.addChild(tree);
+                    }
+                }
+            }
+            // 木箱
+            for (let i = 0; i < 11; i++) {
+                for (let j = 0; j < 16; j++) {
+                    var woodenBox = new PIXI.Sprite.fromImage("res/boxImg/woodenBox.png");
+                    woodenBox.anchor.set(0.5, 0.5);
+                    if (i%2 == 0 && j%2 == 1) {
+                        continue;
+                    }
+                    else if (i%2 == 1 && j%2 == 0){
+                        continue;
+                    }
+                    woodenBox.position.set(width/2+width*2+j*width, height/2+height*2+i*height);
+                    woodBoxList.push(woodenBox);
+                    app.stage.addChild(woodenBox);
+                }
+            }
+        }
+        // 人物创建
+        var player = new PIXI.Sprite.fromImage("res/playerAnime/1_1.png");
+        var playerDown = []; var playerUP = []; var playerLeft = []; var playerRight = [];
+        function InitPlayer() {
+            // 人物材质录入
+            for (var index = 1; index < 5; index++) {
+                var textureUp = new PIXI.Texture.fromImage("res/playerAnime/4_"+index+".png");
+                playerUP.push(textureUp);
+                var textureDown = new PIXI.Texture.fromImage("res/playerAnime/1_"+index+".png");
+                playerDown.push(textureDown);
+                var textureLeft = new PIXI.Texture.fromImage("res/playerAnime/2_"+index+".png");
+                playerLeft.push(textureLeft);
+                var textureRight = new PIXI.Texture.fromImage("res/playerAnime/3_"+index+".png");
+                playerRight.push(textureRight);
+            }
+            player.anchor.set(0.5,0.5);     // 设置锚点
+            player.position.set(400,300);   // 设置初始位置
+            app.stage.addChild(player);
+        }
+        // 炸弹动画材质录入
+        var bubbleList = [];
+        for (var i = 1; i < 5; i++) {
+            bubbleList.push("res/bubbleAnime/"+i+".png")
+        }
+        // 爆炸图片录入
+        var boomList = [];
+        var centerboomImg = new PIXI.Sprite.fromImage("res/boomImg/0.png");
+        centerboomImg.anchor.set(0.5,0.5);
+        boomList.push(centerboomImg);
+        for (var i = 1; i < 5; i++) {
+            for (var j = 1; j < 3; j++) {
+                var boomImg = new PIXI.Sprite.fromImage("res/boomImg/"+i+"_"+j+".png");
+                boomImg.anchor.set(0.5,0.5);
+                boomList.push(boomImg);
+            }
+        }
+        // 执行初始化函数
+        InitMap();
+        InitPlayer();
+        
+        //键盘事件
+        window.onkeydown = KeyDown;
+        window.onkeyup = KeyUp;
+        // player相关
+        var time = 0, index = 0, speed = 10, state = 2; canMove = [false,true,true,true,true];
+        // 泡泡相关
+        var bubble = PIXI.extras.AnimatedSprite.fromImages(bubbleList);
+        bubble.anchor.set(0.5,0.5);
+        var bubbleTime = 0, bubbleindex = 0; bubbleNumber = 0;
+        // 爆炸相关
+        var boomState = false, boomStartTime = 0, boomTime = 0; 
+        function KeyDown(e){
+            var hitbox;
+            // 向上走
+            if (e.key == 'w'){
+                console.log("canMove[1]" + canMove[1]);
+                state = 1;
+                if (time == 0) player.texture = playerUP[0];
+                if (time == 3) {
+                    time = 0;
+                    player.texture = playerUP[index]; index++;
+                    if (index == playerUP.length) index = 0;
+                    if (canMove[1]) player.y -= speed;
+                }
+                time++;
+            }
+            // 向下走
+            if (e.key == 's'){
+                console.log("canMove[2]" + canMove[2]);
+                state = 2;
+                if (time == 0) player.texture = playerDown[0];
+                if (time == 3 && canMove) {
+                    time = 0;
+                    player.texture = playerDown[index]; index++;
+                    if (index == playerDown.length) index = 0;
+                    if (canMove[2]) player.y += speed;
+                }
+                time++;
+            }
+            // 向左走
+            if (e.key == 'a'){
+                console.log("canMove[3]" + canMove[3]);
+                state = 3;
+                if (time == 0) player.texture = playerLeft[0];
+                if (time == 3) {
+                    time = 0;
+                    player.texture = playerLeft[index]; index++;
+                    if (index == playerLeft.length) index = 0;
+                    if (canMove[3]) player.x -= speed;
+                }
+                time++;
+            }
+            // 向右走
+            if (e.key == 'd'){
+                console.log("canMove[4]"+canMove[4]);
+                state = 4;
+                if (time == 0) player.texture = playerRight[0];
+                if (time == 3) {
+                    time = 0;
+                    player.texture = playerRight[index]; index++;
+                    if (index == playerRight.length) index = 0;
+                    if (canMove[4]) player.x += speed;
+                }
+                time++;
+            }
+            // 放置炸弹
+            if (e.key == 'j') {
+                if (bubbleNumber == 0) {
+                    bubble.position.set(player.x, player.y);
+                    app.stage.addChild(bubble);
+                    bubbleNumber = 1;
+                    bubble.animationSpeed = 0.1;//设置动画播放速度
+                    bubble.play();//播放动画
+                }
+                else if(bubbleNumber == 1){
+                    app.stage.removeChild(bubble);
+                    // 产生爆炸
+                    boomList[0].position.set(bubble.x,bubble.y);        app.stage.addChild(boomList[0]);
+                    boomList[1].position.set(bubble.x,bubble.y-40);     app.stage.addChild(boomList[1]);
+                    boomList[2].position.set(bubble.x,bubble.y-80);     app.stage.addChild(boomList[2]);
+                    boomList[3].position.set(bubble.x,bubble.y+40);     app.stage.addChild(boomList[3]);
+                    boomList[4].position.set(bubble.x,bubble.y+80);     app.stage.addChild(boomList[4]);
+                    boomList[5].position.set(bubble.x-40,bubble.y);     app.stage.addChild(boomList[5]);
+                    boomList[6].position.set(bubble.x-80,bubble.y);     app.stage.addChild(boomList[6]);
+                    boomList[7].position.set(bubble.x+40,bubble.y);     app.stage.addChild(boomList[7]);
+                    boomList[8].position.set(bubble.x+80,bubble.y);     app.stage.addChild(boomList[8]);
+                    boomState = true;
+                }
+            }
+            // 限制条件(碰撞)
+            for (var i = 0; i < treeList.length; i++) {
+                if (Math.abs(player.x-treeList[i].x)<50 && Math.abs(player.y-treeList[i].y)<50){
+                    hitbox = treeList[i];
+                    console.log(player.x - hitbox.x, player.y - hitbox.y);
+                    // for (let j = 0; j < canMove.length; j++) {
+                    //     canMove[j] = false;
+                    // }
+                    if (state == 1 && hitbox.y-player.y < 50) {
+                        console.log("1");
+                        canMove[1] = false;
+                        canMove[2] = true;
+                        canMove[3] = true;
+                        canMove[4] = true;
+                    }
+                    else if (state == 2 && hitbox.y-player.y > -50 && hitbox.y-player.y < -30) {
+                        console.log("2");
+                        canMove[1] = true;
+                        canMove[2] = false;
+                        canMove[3] = true;
+                        canMove[4] = true;
+                    }
+                    else if (state == 3 && hitbox.x-player.x < 50) {
+                        console.log("3");
+                        canMove[1] = true;
+                        canMove[2] = true;
+                        canMove[3] = false;
+                        canMove[4] = true;
+                    }
+                    else if (state == 4 && hitbox.x-player.x > -50) {
+                        console.log("4");
+                        canMove[1] = true;
+                        canMove[2] = true;
+                        canMove[3] = true;
+                        canMove[4] = false;
+                    }
+                    // else{
+                    //     for (let j = 0; j < canMove.length; j++) {
+                    //         canMove[j] = true;
+                    //     }
+                    // }
+                }
+            }
+        }
+        function KeyUp(e) {
+            time = 0; index = 0;
+            for (let j = 0; j < canMove.length; j++) {
+                canMove[j] = true;
+            }
+            if (state == 1) player.texture = playerUP[0];
+            if (state == 2) player.texture = playerDown[0];
+            if (state == 3) player.texture = playerLeft[0];
+            if (state == 4) player.texture = playerRight[0];
+        }
+
+        app.ticker.add(Boom);
+        function Boom() {
+            if (!boomState) {
+                boomTime = 0;
+            }
+            else if (boomState) {
+                boomTime++;
+                // 爆炸检测
+                for (let i = 0; i < boomList.length; i++) {
+                    for (let j = 0; j < woodBoxList.length; j++) {
+                        if (Math.abs(boomList[i].x-woodBoxList[j].x)<30 && Math.abs(boomList[i].y-woodBoxList[j].y)<30) {
+                            app.stage.removeChild(woodBoxList[j]);
+                            woodBoxList.splice(j,1);
+                        }
+                    }
+                }
+                // 爆炸结束
+                if (boomTime == 60) {
+                    // 销毁boom
+                    for (var i = 0; i < boomList.length; i++) {
+                        app.stage.removeChild(boomList[i]);
+                    }
+                    boomState = false;
+                    bubbleNumber = 0;
+                }
+            }
+            
+        }
+    </script>
+</body>
+</html>

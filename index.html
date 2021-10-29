@@ -13,7 +13,7 @@
         document.body.appendChild(app.view);
 
         var d = new Date();
-        var second1 = 0, second2 = 0;
+        var seconds = 0, deltaTime = 0;
         
         // 背景
         var bg = new PIXI.Sprite.fromImage("res/Background.png");
@@ -294,6 +294,11 @@
 
         app.ticker.add(Boom);
         function Boom() {
+            seconds++;
+            if (seconds==60) {
+                deltaTime++;
+                seconds = 0;
+            }
             if (!boomState) {
                 boomTime = 0;
             }
@@ -307,10 +312,7 @@
                             scoreText.text = "剩余木箱数：" + (woodBoxList.length-1);
                             if (woodBoxList.length-1==0) {
                                 app.stage.removeChild(scoreText);
-                                var deltaTime = d.getSeconds() - second1;
-                                console.log(d.getSeconds());
-                                console.log(second1);
-                                var timeText = new PIXI.Text("TIME:"+deltaTime);
+                                var timeText = new PIXI.Text("通关时间："+deltaTime+"秒");
                                 timeText.scale.set(1.5,1.5);
                                 timeText.anchor.set(0.5,0.5);
                                 timeText.position.set(400,300);
